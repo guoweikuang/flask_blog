@@ -7,13 +7,14 @@ from flask import render_template, Blueprint, redirect, url_for
 from sqlalchemy import func
 
 from main import app
-from models import db, Post, User, Comment, Tag, posts_tags
-from forms import CommentForm
+from my_blog.models import db, Post, User, Comment, Tag, posts_tags
+from my_blog.forms import CommentForm
 
+print(os.path.join(os.path.pardir, 'templates', 'my_blog')) 
 blog_buleprint = Blueprint(
-    'blog',
+    'my_blog',
     __name__,
-    template_folder=os.path.join('templates/blog'),
+    template_folder=os.path.join(os.path.pardir, 'templates', 'my_blog'),
     url_prefix='/blog')
 
 
@@ -27,11 +28,6 @@ def sidebar_data():
         ).join(posts_tags).group_by(Tag).order_by('total DESC').limit(5).all()
     return recent, top_tags
 
-
-#@app.route('/')
-#def index():
-#    return redirect(url_for('blog.name'))
-#
 
 @blog_buleprint.route('/')
 @blog_buleprint.route('/<int:page>')
