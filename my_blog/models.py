@@ -1,8 +1,19 @@
 # -*- coding: utf-8 -*-
 from flask_sqlalchemy import SQLAlchemy
-# from main import app
+from my_blog.extensions import bcrypt
+from flask_login import AnonymousUserMixin
 
 db = SQLAlchemy()
+
+posts_tags = db.Table('posts_tags',
+    db.Column('post_id', db.String(64), db.ForeignKey('posts.id')),
+    db.Column("tag_id", db.String(64), db.ForeignKey('tags.id'))
+)
+
+users_roles = db.Table(
+    'users_roles',
+    db.Column('user_id', db.String(45), db.ForeignKey('users.id')),
+    db.Column('role_id', db.String(45), db.ForeignKey('roles.id')))
 
 
 class User(db.Model):
@@ -24,20 +35,44 @@ class User(db.Model):
         backref="users",
         lazy="dynamic"
     )
+    #roles = db.relationship(
+    #    'Role',
+    #    secondary=users_roles,
+    #    backref=db.backref('users', lazy='dynamic')
+    #)
 
     def __init__(self, id, username, password):
         self.id = id
         self.username = username
-        self.password = password
+        self.password = self.set_password(password)
 
     def __repr__(self):
         return 'User Model from {}'.format(self.username)
+    
+    def set_password(self, password):
+        """加密密码"""
+        return bcrypt.generate_password_hash(password)
 
+    def check_password(self, password):
+        """核对密码"""
+        return bcrypt.check_password_hash(self.password, password)
+    
+    def is_authenticated(self):
+        if isinstance(self, AnonymousUserMixin):
+            return False
+        else:
+            return True
+    
+    def is_active(self):
+        return True
 
-posts_tags = db.Table('posts_tags',
-    db.Column('post_id', db.String(64), db.ForeignKey('posts.id')),
-    db.Column("tag_id", db.String(64), db.ForeignKey('tags.id'))
-)
+    def is_annoymous(self):
+        if isinstance(self, AnonymousUserMixin):
+            return True
+        return False
+
+    def get_id(self):
+        return unicode(self.id)
 
 
 class Post(db.Model):

@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-import datetime
+from datetime import datetime
 import os
 
 from uuid import uuid4
 from flask import render_template, Blueprint, redirect, url_for
 from sqlalchemy import func
 
-from main import app
+# from main import app
 from my_blog.models import db, Post, User, Comment, Tag, posts_tags
-from my_blog.forms import CommentForm
+from my_blog.forms import CommentForm, PostForm
 
 print(os.path.join(os.path.pardir, 'templates', 'my_blog')) 
 blog_buleprint = Blueprint(
@@ -53,7 +53,7 @@ def post(post_id):
         new_comment = Comment(name=form.name.data)
         new_comment.id = str(uuid4())
         new_comment.comment = form.text.data
-        new_comment.create_time = datetime.datetime.now()
+        new_comment.create_time = datetime.now()
         new_comment.post_id = post_id
         db.session.add(new_comment)
         db.session.commit()
@@ -100,5 +100,38 @@ def username(username):
                            top_tags=top_tags)
 
 
+@blog_buleprint.route('/new', methods=['GET', 'POST'])
+def new_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        new_post = Post(title=form.title.data)
+        new_post.id = str(uuid4())
+        new_post.create_time = datetime.now()
+        new_post.text = form.text.data
 
+        db.session.add(new_post)
+        db.session.commit()
+        return redirect(url_for('my_blog.home'))
+    return render_template('new_post.html', form=form)
+
+
+@blog_buleprint.route('/edit_post/<string:id>', methods=['GET', 'POST'])
+def edit_post(id):
+    post = Post.query.get_or_404(id)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.text = form.text.data
+        post.create_time = datetime.now()
+
+        db.session.add(post)
+        db.session.commit()
+        return redirect(url_for('my_blog.post', post_id=post.id))
+    form.title.data = post.title
+    form.text.data = post.text
+    return render_template('edit_post.html', form=form, post=post)
+
+
+
+    
 
